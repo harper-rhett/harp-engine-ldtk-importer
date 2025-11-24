@@ -21,12 +21,11 @@ public class LDTKImporter
 		this.tileSize = tileSize;
 	}
 
-	public TiledWorld GenerateWorld()
+	public LDTKWorld GenerateWorld()
 	{
 		DeserializeTilesets();
 		LDTKArea[] areas = DeserializeLevels();
-		TiledWorld world = new(areas, tileSize);
-		DeserializeSpawn();
+		LDTKWorld world = new(areas, tileSize);
 		return world;
 	}
 
@@ -101,17 +100,25 @@ public class LDTKImporter
 		for (int entityIndex  = 0; entityIndex < entityCount; entityIndex++)
 		{
 			EntityInstance entityData = layerData.EntityInstances[entityIndex];
-			LDTKEntity ldtkEntity = new(entityData.Identifier);
-
-			foreach (FieldInstance fieldData in entityData.FieldInstances)
-			{
-				LDTKField field = new(fieldData.Identifier, fieldData.Value, fieldData.Type);
-				ldtkEntity.AddField(field);
-			}
-
+			
+			LDTKField[] fields = DeserializeFields(entityData.FieldInstances);
+			LDTKEntity ldtkEntity = new(entityData.Identifier, fields, new((float)entityData.WorldX, (float)entityData.WorldY));
 			ldtkEntities[entityIndex] = ldtkEntity;
 		}
 		return ldtkEntities;
+	}
+
+	private LDTKField[] DeserializeFields(FieldInstance[] fieldsData)
+	{
+		int fieldCount = fieldsData.Length;
+		LDTKField[] fields = new LDTKField[fieldCount];
+		for (int fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++)
+		{
+			FieldInstance fieldData = fieldsData[fieldIndex];
+			LDTKField field = new(fieldData.Identifier, fieldData.Value, fieldData.Type);
+			fields[fieldIndex] = field;
+		}
+		return fields;
 	}
 
 	private LDTKArea[] DeserializeLevels()
@@ -134,29 +141,16 @@ public class LDTKImporter
 
 			// Create area
 			Vector2 position = new((int)levelData.WorldX, (int)levelData.WorldY);
-			LDTKArea area = new(position, widthInTiles, heightInTiles, tileSize);
+			LDTKField[] fields = DeserializeFields(levelData.FieldInstances);
+			LDTKEntity[] entities = DeserializeEntities(entityLayerData);
+			LDTKArea area = new(levelData.Identifier, fields, entities, position, widthInTiles, heightInTiles, tileSize);
 			area.Tiles = DeserializeTiles(tileLayerData);
 			area.TilesByID = DeserializeTileTypes(tileLayerData, widthInTiles, heightInTiles);
-			area.Entities = DeserializeEntities(entityLayerData);
 
 			// Register area
 			areas[areaIndex] = area;
 			areasByID[levelData.Iid] = area;
 		}
 		return areas;
-	}
-
-	public TiledArea SpawnArea { get; private set; }
-	public Vector2 SpawnPosition { get; private set; }
-	private void DeserializeSpawn() // change to deserialize entities? spawn should be temporary
-	{
-		foreach (LdtkTableOfContentEntry entityData in ldtkData.Toc)
-			if (entityData.Identifier == "spawn")
-			{
-				LdtkTocInstanceData spawnInstance = entityData.InstancesData[0];
-				string levelID = spawnInstance.Iids.LevelIid;
-				SpawnArea = areasByID[levelID];
-				SpawnPosition = new(spawnInstance.WorldX, spawnInstance.WorldY);
-			}
 	}
 }

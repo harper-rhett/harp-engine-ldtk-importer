@@ -1,4 +1,5 @@
 ﻿using HarpEngine;
+using System.Numerics;
 
 namespace HarpEngineLDTKImporter;
 
@@ -17,19 +18,17 @@ public class LDTKField
 public class LDTKEntity : Entity
 {
 	public readonly string ID;
-	private List<LDTKField> fields = new();
+	private LDTKField[] fields;
 	public IReadOnlyList<LDTKField> Fields => fields;
 	private Dictionary<string, LDTKField> fieldsByID = new();
 	public IReadOnlyDictionary<string, LDTKField> FieldsByID => fieldsByID;
+	public Vector2 Position;
 
-	public LDTKEntity(string id)
+	public LDTKEntity(string id, LDTKField[] fields, Vector2 position)
 	{
 		ID = id;
-	}
-
-	public void AddField(LDTKField field)
-	{
-		fields.Add(field);
-		fieldsByID[field.ID] = field;
+		this.fields = fields;
+		foreach (LDTKField field in fields) fieldsByID[field.ID] = field;
+		Position = position;
 	}
 }
