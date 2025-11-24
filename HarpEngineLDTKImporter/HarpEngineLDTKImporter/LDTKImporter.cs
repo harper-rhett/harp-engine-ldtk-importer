@@ -94,21 +94,25 @@ public class LDTKImporter
 		return tileIDs;
 	}
 
-	//private Dictionary<string, List<LDTKEntity>> DeserializeEntities(LayerInstance layerData)
-	//{
-	//	int entityCount = layerData.EntityInstances.Length;
-	//	LDTKEntity[] ldtkEntities = new LDTKEntity[entityCount];
-	//	for (int entityIndex  = 0; entityIndex < entityCount; entityIndex++)
-	//	{
-	//		EntityInstance entityData = layerData.EntityInstances[entityIndex];
+	private LDTKEntity[] DeserializeEntities(LayerInstance layerData)
+	{
+		int entityCount = layerData.EntityInstances.Length;
+		LDTKEntity[] ldtkEntities = new LDTKEntity[entityCount];
+		for (int entityIndex  = 0; entityIndex < entityCount; entityIndex++)
+		{
+			EntityInstance entityData = layerData.EntityInstances[entityIndex];
+			LDTKEntity ldtkEntity = new(entityData.Identifier);
 
-	//		foreach (FieldInstance fieldData in entityData.FieldInstances)
-	//		{
+			foreach (FieldInstance fieldData in entityData.FieldInstances)
+			{
+				LDTKField field = new(fieldData.Identifier, fieldData.Value, fieldData.Type);
+				ldtkEntity.AddField(field);
+			}
 
-	//		}
-	//	}
-	//	return ldtkEntities;
-	//}
+			ldtkEntities[entityIndex] = ldtkEntity;
+		}
+		return ldtkEntities;
+	}
 
 	private LDTKArea[] DeserializeLevels()
 	{
@@ -133,6 +137,7 @@ public class LDTKImporter
 			LDTKArea area = new(position, widthInTiles, heightInTiles, tileSize);
 			area.Tiles = DeserializeTiles(tileLayerData);
 			area.TilesByID = DeserializeTileTypes(tileLayerData, widthInTiles, heightInTiles);
+			area.Entities = DeserializeEntities(entityLayerData);
 
 			// Register area
 			areas[areaIndex] = area;
