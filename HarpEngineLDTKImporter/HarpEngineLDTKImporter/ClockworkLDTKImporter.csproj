@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\harp-engine\HarpEngine\HarpEngine.csproj" />
+    <ProjectReference Include="..\..\..\clockwork-engine\ClockworkEngine\ClockworkEngine.csproj" />
   </ItemGroup>
 
 </Project>

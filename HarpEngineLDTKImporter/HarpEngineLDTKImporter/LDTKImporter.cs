@@ -1,10 +1,10 @@
-﻿using HarpEngine.Graphics;
-using HarpEngine.Tiles;
-using HarpEngine.Utilities;
+﻿using Clockwork.Graphics;
+using Clockwork.Tiles;
+using Clockwork.Utilities;
 using ldtk;
 using System.Numerics;
 
-namespace HarpEngine.LDTKImporter;
+namespace Clockwork.LDTKImporter;
 
 public class LDTKImporter
 {

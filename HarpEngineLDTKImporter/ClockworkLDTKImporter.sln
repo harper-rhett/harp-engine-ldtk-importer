@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36717.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarpEngineLDTKImporter", "HarpEngineLDTKImporter\HarpEngineLDTKImporter.csproj", "{90CD6275-D5CF-4F66-AE63-E7A8FF58ED53}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HarpEngine", "..\..\harp-engine\HarpEngine\HarpEngine.csproj", "{651439E8-9A23-92FD-ABA8-99F4CB0073FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClockworkLDTKImporter", "HarpEngineLDTKImporter\ClockworkLDTKImporter.csproj", "{90CD6275-D5CF-4F66-AE63-E7A8FF58ED53}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{90CD6275-D5CF-4F66-AE63-E7A8FF58ED53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{90CD6275-D5CF-4F66-AE63-E7A8FF58ED53}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90CD6275-D5CF-4F66-AE63-E7A8FF58ED53}.Release|Any CPU.Build.0 = Release|Any CPU
-		{651439E8-9A23-92FD-ABA8-99F4CB0073FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{651439E8-9A23-92FD-ABA8-99F4CB0073FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{651439E8-9A23-92FD-ABA8-99F4CB0073FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{651439E8-9A23-92FD-ABA8-99F4CB0073FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
