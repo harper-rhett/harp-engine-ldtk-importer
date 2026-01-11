@@ -5,7 +5,7 @@ namespace Clockwork.LDTKImporter;
 
 public class LDTKGameArea : TiledGameArea
 {
-	public readonly string ID;
+	public readonly string Name;
 
 	// Entities
 	private LDTKEntity[] entities;
@@ -23,20 +23,20 @@ public class LDTKGameArea : TiledGameArea
 	private Dictionary<string, LDTKField> fieldsByID = new();
 	public IReadOnlyDictionary<string, LDTKField> FieldsByID => fieldsByID;
 
-	public LDTKGameArea(string id, LDTKField[] fields, LDTKEntity[] entities, Vector2 position, int widthInTiles, int heightInTiles, int tileSize) : base(position, widthInTiles, heightInTiles, tileSize)
+	public LDTKGameArea(string name, LDTKField[] fields, LDTKEntity[] entities, Vector2 position, int widthInTiles, int heightInTiles, int tileSize) : base(position, widthInTiles, heightInTiles, tileSize)
 	{
-		ID = id;
+		Name = name;
 
 		// Fields
 		this.fields = fields;
-		foreach (LDTKField field in fields) fieldsByID[field.ID] = field;
+		foreach (LDTKField field in fields) fieldsByID[field.Name] = field;
 
 		// Entities
 		this.entities = entities;
 		foreach (LDTKEntity entity in entities)
 		{
-			if (!entitiesByID.ContainsKey(entity.ID)) entitiesByID[entity.ID] = new List<LDTKEntity>();
-			entitiesByID[entity.ID].Add(entity);
+			if (!entitiesByID.ContainsKey(entity.Name)) entitiesByID[entity.Name] = new List<LDTKEntity>();
+			entitiesByID[entity.Name].Add(entity);
 		}
 	}
 }

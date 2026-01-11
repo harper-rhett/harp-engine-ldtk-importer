@@ -8,57 +8,28 @@ namespace Clockwork.LDTKImporter;
 
 public class LDTKImporter
 {
-	private LdtkJson ldtkData;
-	private Dictionary<string, Texture> tilesetsByPath = new();
 	private int tileSize;
-	private Dictionary<string, LDTKLevel> levelsByID = new();
+	private Dictionary<string, Texture> tilesetsByPath = new();
+	private LDTKContainer ldtkContainer;
 	public Action<LDTKGameArea> GameAreaImported;
-
-	private class LDTKLevel
-	{
-		public readonly Level Data;
-		public readonly Dictionary<string, LayerInstance> LayersByID = new();
-
-		public LDTKLevel(Level levelData)
-		{
-			Data = levelData;
-			DeserializeLayers(levelData);
-		}
-
-		private void DeserializeLayers(Level levelData)
-		{
-			foreach (LayerInstance layerData in levelData.LayerInstances) LayersByID[layerData.Identifier] = layerData;
-		}
-	}
 
 	public LDTKImporter(string localPath, int tileSize)
 	{
-		string ldtkJSON = File.ReadAllText(localPath);
-		ldtkData = LdtkJson.FromJson(ldtkJSON);
 		this.tileSize = tileSize;
-		DeserializeLevels();
-		DeserializeTilesets();
+		ldtkContainer = new(localPath);
+		ImportTilesets();
 	}
 
-	public LDTKWorld DeserializeWorld(string tileLayerName, string entityLayerName)
+	public LDTKWorld ImportWorld(string tileLayerName, string entityLayerName)
 	{
-		LDTKGameArea[] areas = DeserializeGameAreas(tileLayerName, entityLayerName);
+		LDTKGameArea[] areas = ImportGameAreas(tileLayerName, entityLayerName);
 		LDTKWorld world = new(areas, tileSize);
 		return world;
 	}
 
-	private void DeserializeTilesets()
+	private void ImportTilesets()
 	{
-		foreach (TilesetDefinition tilesetData in ldtkData.Defs.Tilesets)
-		{
-			if (tilesetData.RelPath is null) continue;
-			tilesetsByPath[tilesetData.RelPath] = Texture.Load(tilesetData.RelPath);
-		}
-	}
-
-	private void DeserializeLevels()
-	{
-		foreach (Level level in ldtkData.Levels) levelsByID[level.Iid] = new(level);
+		foreach (string tilesetPath in ldtkContainer.TilesetPaths) tilesetsByPath[tilesetPath] = Texture.Load(tilesetPath);
 	}
 
 	private Tile[] DeserializeTiles(LayerInstance layerData)
@@ -109,78 +80,53 @@ public class LDTKImporter
 		return tileIDs;
 	}
 
-	private LDTKEntity[] DeserializeEntities(LayerInstance layerData)
+	private LDTKEntity[] ImportEntities(LayerInstance layerData)
 	{
-		int entityCount = layerData.EntityInstances.Length;
-		LDTKEntity[] ldtkEntities = new LDTKEntity[entityCount];
-		for (int entityIndex  = 0; entityIndex < entityCount; entityIndex++)
-		{
-			EntityInstance entityData = layerData.EntityInstances[entityIndex];
-			
-			LDTKField[] fields = DeserializeFields(entityData.FieldInstances);
-			LDTKEntity ldtkEntity = new(entityData.Identifier, fields, new((float)entityData.WorldX, (float)entityData.WorldY));
-			ldtkEntities[entityIndex] = ldtkEntity;
-		}
-		return ldtkEntities;
+		List<LDTKEntity> ldtkEntities = new();
+		foreach (EntityInstance entityData in layerData.EntityInstances) ldtkEntities.Add(new(entityData));
+		return ldtkEntities.ToArray();
 	}
 
-	private LDTKField[] DeserializeFields(FieldInstance[] fieldsData)
+	private LDTKGameArea[] ImportGameAreas(string tileLayerName, string entityLayerName)
 	{
-		int fieldCount = fieldsData.Length;
-		LDTKField[] fields = new LDTKField[fieldCount];
-		for (int fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++)
-		{
-			FieldInstance fieldData = fieldsData[fieldIndex];
-			LDTKField field = new(fieldData.Identifier, fieldData.Value, fieldData.Type);
-			fields[fieldIndex] = field;
-		}
-		return fields;
-	}
-
-	private LDTKGameArea[] DeserializeGameAreas(string tileLayerName, string entityLayerName)
-	{
-		Dictionary<string, LDTKGameArea> gameAreasByID = new();
-		foreach (LDTKLevel level in levelsByID.Values)
+		List<LDTKGameArea> gameAreas = new();
+		foreach (LDTKLevel level in ldtkContainer.Levels)
 		{
 			// Get tiles layer
-			LayerInstance tileLayerData = level.LayersByID[tileLayerName];
-			LayerInstance entityLayerData = level.LayersByID[entityLayerName];
+			LayerInstance tileLayerData = level.LayersByName[tileLayerName];
+			LayerInstance entityLayerData = level.LayersByName[entityLayerName];
 
 			// Extract some basic information
 			int widthInTiles = (int)tileLayerData.CWid;
 			int heightInTiles = (int)tileLayerData.CHei;
 
 			// Create area
-			Vector2 position = new((int)level.Data.WorldX, (int)level.Data.WorldY);
-			LDTKField[] fields = DeserializeFields(level.Data.FieldInstances);
-			LDTKEntity[] entities = DeserializeEntities(entityLayerData);
-			LDTKGameArea area = new(level.Data.Identifier, fields, entities, position, widthInTiles, heightInTiles, tileSize);
+			LDTKEntity[] entities = ImportEntities(entityLayerData);
+			LDTKGameArea area = new(level.Name, level.Fields, entities, level.Position, widthInTiles, heightInTiles, tileSize);
 			area.Tiles = DeserializeTiles(tileLayerData);
 			area.TilesByID = DeserializeTileTypes(tileLayerData, widthInTiles, heightInTiles);
 			GameAreaImported.Invoke(area);
 
 			// Register area
-			gameAreasByID[level.Data.Iid] = area;
+			gameAreas.Add(area);
 		}
-		return gameAreasByID.Values.ToArray();
+		return gameAreas.ToArray();
 	}
 
-	public TiledDecorationLayer DeserializeDecorationLayer(LDTKGameArea[] areas, string layerName, int drawLayer)
+	public TiledDecorationLayer ImportDecorationLayer(LDTKGameArea[] areas, string layerName, int drawLayer)
 	{
 		TiledDecorationLayer decorationLayer = new();
-		foreach (LDTKLevel level in levelsByID.Values)
+		foreach (LDTKLevel level in ldtkContainer.Levels)
 		{
 			// Get tiles layer
-			LayerInstance tileLayerData = level.LayersByID[layerName];
+			LayerInstance tileLayerData = level.LayersByName[layerName];
 
 			// Extract some basic information
 			int widthInTiles = (int)tileLayerData.CWid;
 			int heightInTiles = (int)tileLayerData.CHei;
 
 			// Create area
-			Vector2 position = new((int)level.Data.WorldX, (int)level.Data.WorldY);
-			LDTKField[] fields = DeserializeFields(level.Data.FieldInstances);
-			TiledArea area = new(position, widthInTiles, heightInTiles, tileSize);
+			TiledArea area = new(level.Position, widthInTiles, heightInTiles, tileSize);
 			area.Tiles = DeserializeTiles(tileLayerData);
 		}
 		return decorationLayer;

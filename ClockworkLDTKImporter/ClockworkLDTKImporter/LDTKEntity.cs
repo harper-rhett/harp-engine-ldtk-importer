@@ -1,34 +1,22 @@
-﻿using Clockwork;
+﻿using ldtk;
 using System.Numerics;
 
 namespace Clockwork.LDTKImporter;
 
-public class LDTKField
-{
-	public readonly string ID;
-	public readonly dynamic Value;
-	public readonly string Type;
-
-	public LDTKField(string id, dynamic value, string type)
-	{
-		ID = id; Value = value; Type = type;
-	}
-}
-
 public class LDTKEntity
 {
-	public readonly string ID;
-	private LDTKField[] fields;
+	public readonly string Name;
+	private readonly LDTKField[] fields;
 	public IReadOnlyList<LDTKField> Fields => fields;
-	private Dictionary<string, LDTKField> fieldsByID = new();
-	public IReadOnlyDictionary<string, LDTKField> FieldsByID => fieldsByID;
-	public Vector2 Position;
+	private Dictionary<string, LDTKField> fieldsByName = new();
+	public IReadOnlyDictionary<string, LDTKField> FieldsByName => fieldsByName;
+	public readonly Vector2 Position;
 
-	public LDTKEntity(string id, LDTKField[] fields, Vector2 position)
+	public LDTKEntity(EntityInstance entityData)
 	{
-		ID = id;
-		this.fields = fields;
-		foreach (LDTKField field in fields) fieldsByID[field.ID] = field;
-		Position = position;
+		Name = entityData.Identifier;
+		fields = LDTKContainer.DeserializeFields(entityData.FieldInstances);
+		foreach (LDTKField field in fields) fieldsByName[field.Name] = field;
+		Position = new((float)entityData.WorldX, (float)entityData.WorldY);
 	}
 }
