@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Clockwork.LDTKImporter;
 
-public class LDTKArea : TiledArea
+public class LDTKGameArea : TiledGameArea
 {
 	public readonly string ID;
 
@@ -23,7 +23,7 @@ public class LDTKArea : TiledArea
 	private Dictionary<string, LDTKField> fieldsByID = new();
 	public IReadOnlyDictionary<string, LDTKField> FieldsByID => fieldsByID;
 
-	public LDTKArea(string id, LDTKField[] fields, LDTKEntity[] entities, Vector2 position, int widthInTiles, int heightInTiles, int tileSize) : base(position, widthInTiles, heightInTiles, tileSize)
+	public LDTKGameArea(string id, LDTKField[] fields, LDTKEntity[] entities, Vector2 position, int widthInTiles, int heightInTiles, int tileSize) : base(position, widthInTiles, heightInTiles, tileSize)
 	{
 		ID = id;
 

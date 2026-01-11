@@ -4,12 +4,12 @@ namespace Clockwork.LDTKImporter;
 
 public class LDTKWorld : TiledWorld
 {
-	private Dictionary<string, LDTKArea> areasByID = new();
-	public IReadOnlyDictionary<string, LDTKArea> AreasByID => areasByID;
+	private Dictionary<string, LDTKGameArea> areasByID = new();
+	public IReadOnlyDictionary<string, LDTKGameArea> AreasByID => areasByID;
 
-	public LDTKWorld(IEnumerable<TiledArea> areas, int tileSize) : base(tileSize)
+	public LDTKWorld(IEnumerable<TiledGameArea> areas, int tileSize) : base(tileSize)
 	{
-		foreach (LDTKArea area in areas)
+		foreach (LDTKGameArea area in areas)
 		{
 			areasByID[area.ID] = area;
 			AddArea(area);
