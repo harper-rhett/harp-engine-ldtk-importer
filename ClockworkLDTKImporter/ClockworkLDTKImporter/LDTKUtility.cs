@@ -3,14 +3,14 @@ using ldtk;
 
 namespace Clockwork.LDTKImporter;
 
-public class LDTKContainer
+public class LDTKUtility
 {
 	private LdtkJson ldtkData;
 	public readonly List<LDTKLevel> Levels = new();
 	public readonly Dictionary<string, LDTKLevel> LevelsByID = new();
 	public readonly List<string> TilesetPaths = new();
 
-	public LDTKContainer(string localPath)
+	public LDTKUtility(string localPath)
 	{
 		string ldtkJSON = File.ReadAllText(localPath);
 		ldtkData = LdtkJson.FromJson(ldtkJSON);

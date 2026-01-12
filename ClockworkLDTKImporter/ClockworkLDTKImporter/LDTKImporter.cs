@@ -1,8 +1,5 @@
 ﻿using Clockwork.Graphics;
 using Clockwork.Tiles;
-using Clockwork.Utilities;
-using ldtk;
-using System.Numerics;
 
 namespace Clockwork.LDTKImporter;
 
@@ -10,13 +7,13 @@ public class LDTKImporter
 {
 	private int tileSize;
 	private Dictionary<string, Texture> tilesetsByPath = new();
-	private LDTKContainer ldtkContainer;
+	private LDTKUtility ldtkUtility;
 	public Action<LDTKGameArea> GameAreaImported;
 
 	public LDTKImporter(string localPath, int tileSize)
 	{
 		this.tileSize = tileSize;
-		ldtkContainer = new(localPath);
+		ldtkUtility = new(localPath);
 		ImportTilesets();
 	}
 
@@ -29,82 +26,36 @@ public class LDTKImporter
 
 	private void ImportTilesets()
 	{
-		foreach (string tilesetPath in ldtkContainer.TilesetPaths) tilesetsByPath[tilesetPath] = Texture.Load(tilesetPath);
+		foreach (string tilesetPath in ldtkUtility.TilesetPaths) tilesetsByPath[tilesetPath] = Texture.Load(tilesetPath);
 	}
 
-	private Tile[] DeserializeTiles(LayerInstance layerData)
+	private Tile[] ImportTiles(LDTKLayer ldtkLayer)
 	{
-		// Initialize collections
-		TileInstance[] tilesData = layerData.AutoLayerTiles;
-		Tile[] tiles = new Tile[tilesData.Length];
+		List<Tile> tiles = new();
 
-		// Populate tiles
-		for (int tileIndex = 0; tileIndex < tiles.Length; tileIndex++)
+		foreach (LDTKTile ldtkTile in ldtkLayer.Tiles)
 		{
-			TileInstance tileData = tilesData[tileIndex];
-
-			// Get the position
-			int localX = (int)tileData.Px[0];
-			int localY = (int)tileData.Px[1];
-			Vector2 localPosition = new(localX, localY);
-
-			// Get the tileset information
-			int tilesetX = (int)tileData.Src[0];
-			int tilesetY = (int)tileData.Src[1];
-			bool xFlipped = (tileData.F & 1) != 0;
-			bool yFlipped = (tileData.F & (1L << 1)) != 0;
-
-			// Create the tile
-			Texture tilesetTexture = tilesetsByPath[layerData.TilesetRelPath];
-			Tile tile = new(localPosition, tilesetTexture, tilesetX, tilesetY, tileSize, xFlipped, yFlipped);
-			tiles[tileIndex] = tile;
+			Texture tilesetTexture = tilesetsByPath[ldtkLayer.TilesetPath];
+			Tile tile = new(ldtkTile.LocalPosition, tilesetTexture, ldtkTile.TilesetX, ldtkTile.TilesetY, tileSize, ldtkTile.XFlipped, ldtkTile.YFlipped);
+			tiles.Add(tile);
 		}
 
-		return tiles;
-	}
-
-	private int[,] DeserializeTileTypes(LayerInstance layerData, int widthInTiles, int heightInTiles)
-	{
-		// Initialize collections
-		long[] gridData = layerData.IntGridCsv;
-		int[,] tileIDs = new int[widthInTiles, heightInTiles];
-
-		// Preprocess tile IDs
-		for (int x = 0; x < widthInTiles; x++)
-			for (int y = 0; y < heightInTiles; y++)
-			{
-				int tileIndex = x + y * widthInTiles;
-				tileIDs[x, y] = (int)gridData[tileIndex];
-			}
-
-		return tileIDs;
-	}
-
-	private LDTKEntity[] ImportEntities(LayerInstance layerData)
-	{
-		List<LDTKEntity> ldtkEntities = new();
-		foreach (EntityInstance entityData in layerData.EntityInstances) ldtkEntities.Add(new(entityData));
-		return ldtkEntities.ToArray();
+		return tiles.ToArray();
 	}
 
 	private LDTKGameArea[] ImportGameAreas(string tileLayerName, string entityLayerName)
 	{
 		List<LDTKGameArea> gameAreas = new();
-		foreach (LDTKLevel level in ldtkContainer.Levels)
+		foreach (LDTKLevel level in ldtkUtility.Levels)
 		{
 			// Get tiles layer
-			LayerInstance tileLayerData = level.LayersByName[tileLayerName];
-			LayerInstance entityLayerData = level.LayersByName[entityLayerName];
-
-			// Extract some basic information
-			int widthInTiles = (int)tileLayerData.CWid;
-			int heightInTiles = (int)tileLayerData.CHei;
+			LDTKLayer tileLayerData = level.LayersByName[tileLayerName];
+			LDTKLayer entityLayerData = level.LayersByName[entityLayerName];
 
 			// Create area
-			LDTKEntity[] entities = ImportEntities(entityLayerData);
-			LDTKGameArea area = new(level.Name, level.Fields, entities, level.Position, widthInTiles, heightInTiles, tileSize);
-			area.Tiles = DeserializeTiles(tileLayerData);
-			area.TilesByID = DeserializeTileTypes(tileLayerData, widthInTiles, heightInTiles);
+			LDTKGameArea area = new(level.Name, level.Fields, entityLayerData.Entities.ToArray(), level.Position, tileLayerData.WidthInTiles, tileLayerData.HeightInTiles, tileSize);
+			area.Tiles = ImportTiles(tileLayerData);
+			area.TilesByID = tileLayerData.TileIDs;
 			GameAreaImported.Invoke(area);
 
 			// Register area
@@ -116,18 +67,14 @@ public class LDTKImporter
 	public TiledDecorationLayer ImportDecorationLayer(LDTKGameArea[] areas, string layerName, int drawLayer)
 	{
 		TiledDecorationLayer decorationLayer = new();
-		foreach (LDTKLevel level in ldtkContainer.Levels)
+		foreach (LDTKLevel level in ldtkUtility.Levels)
 		{
 			// Get tiles layer
-			LayerInstance tileLayerData = level.LayersByName[layerName];
-
-			// Extract some basic information
-			int widthInTiles = (int)tileLayerData.CWid;
-			int heightInTiles = (int)tileLayerData.CHei;
+			LDTKLayer tileLayerData = level.LayersByName[layerName];
 
 			// Create area
-			TiledArea area = new(level.Position, widthInTiles, heightInTiles, tileSize);
-			area.Tiles = DeserializeTiles(tileLayerData);
+			TiledArea area = new(level.Position, tileLayerData.WidthInTiles, tileLayerData.HeightInTiles, tileSize);
+			area.Tiles = ImportTiles(tileLayerData);
 		}
 		return decorationLayer;
 	}

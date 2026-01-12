@@ -15,7 +15,7 @@ public class LDTKEntity
 	public LDTKEntity(EntityInstance entityData)
 	{
 		Name = entityData.Identifier;
-		fields = LDTKContainer.DeserializeFields(entityData.FieldInstances);
+		fields = LDTKUtility.DeserializeFields(entityData.FieldInstances);
 		foreach (LDTKField field in fields) fieldsByName[field.Name] = field;
 		Position = new((float)entityData.WorldX, (float)entityData.WorldY);
 	}
